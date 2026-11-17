@@ -10,15 +10,16 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v1.0.2, windows-v1.0.2, android-v1.0.2, ios-v1.0.2)'
+        description: 'Release tag (e.g. v1.0.3, windows-v1.0.3, android-v1.0.3, ios-v1.0.3)'
         required: true
-        default: 'v1.0.2'
+        default: 'v1.0.3'
       platforms:
         description: 'Platforms to package'
         type: choice
         required: true
-        default: 'All'
+        default: 'auto'
         options:
+          - auto
           - All
           - Windows
           - Android
@@ -28,15 +29,22 @@ permissions:
   contents: write
 
 jobs:
-  plan:
+  detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.meta.outputs.tag }}
-      version: ${{ steps.meta.outputs.version }}
-      platform: ${{ steps.meta.outputs.platform }}
+      tag: ${{ steps.plan.outputs.tag }}
+      version: ${{ steps.plan.outputs.version }}
+      build_windows: ${{ steps.plan.outputs.build_windows }}
+      build_android: ${{ steps.plan.outputs.build_android }}
+      build_ios: ${{ steps.plan.outputs.build_ios }}
     steps:
-      - name: Determine release tag and platform scope
-        id: meta
+      - name: Checkout repository with full tag history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine release version and changed platforms
+        id: plan
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -45,81 +53,225 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         run: |
           python3 - <<'PY'
-          import os, re
+          import os
+          import re
+          import subprocess
+
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
 
           event_name = os.environ['EVENT_NAME']
           tag = os.environ['INPUT_TAG'] if event_name == 'workflow_dispatch' else os.environ['REF_NAME']
+          platforms_mode = os.environ.get('INPUT_PLATFORMS', 'auto') if event_name == 'workflow_dispatch' else 'auto'
+
           clean_version = re.sub(r'^(?:[a-zA-Z0-9_-]+-)?[vV]', '', tag)
 
-          if event_name == 'workflow_dispatch':
-              platform = os.environ.get('INPUT_PLATFORMS', 'All')
-          elif tag.lower().startswith('windows-v'):
-              platform = 'Windows'
-          elif tag.lower().startswith('android-v'):
-              platform = 'Android'
-          elif tag.lower().startswith('ios-v'):
-              platform = 'iOS'
+          def find_prev_tag_commit(pattern_re):
+              raw_refs = git(
+                  'for-each-ref',
+                  '--merged=HEAD',
+                  '--format=%(*objectname)\t%(objectname)\t%(refname:short)',
+                  'refs/tags',
+              )
+              commit_tags = {}
+              for line in raw_refs.splitlines():
+                  if not line.strip():
+                      continue
+                  deref, obj, name = line.split('\t')
+                  commit = deref or obj
+                  if name == tag:
+                      continue
+                  if re.match(pattern_re, name, re.IGNORECASE):
+                      commit_tags.setdefault(commit, []).append(name)
+
+              if not commit_tags:
+                  return None, None
+
+              for commit in git('rev-list', 'HEAD').splitlines():
+                  if commit in commit_tags:
+                      return commit, commit_tags[commit][0]
+              return None, None
+
+          def has_changes(prev_commit, paths):
+              if prev_commit:
+                  out = git('diff', '--name-only', f'{prev_commit}..HEAD', '--', *paths)
+              else:
+                  out = git('ls-tree', '-r', '--name-only', 'HEAD', '--', *paths)
+              return bool(out.strip())
+
+          lower_tag = tag.lower()
+          if platforms_mode == 'All':
+              build_win, build_and, build_ios = True, True, True
+              reason = 'manual dispatch (All)'
+          elif platforms_mode == 'Windows':
+              build_win, build_and, build_ios = True, False, False
+              reason = 'manual dispatch (Windows)'
+          elif platforms_mode == 'Android':
+              build_win, build_and, build_ios = False, True, False
+              reason = 'manual dispatch (Android)'
+          elif platforms_mode == 'iOS':
+              build_win, build_and, build_ios = False, False, True
+              reason = 'manual dispatch (iOS)'
+          elif lower_tag.startswith('windows-v'):
+              build_win, build_and, build_ios = True, False, False
+              reason = 'windows-scoped tag'
+          elif lower_tag.startswith('android-v'):
+              build_win, build_and, build_ios = False, True, False
+              reason = 'android-scoped tag'
+          elif lower_tag.startswith('ios-v'):
+              build_win, build_and, build_ios = False, False, True
+              reason = 'ios-scoped tag'
           else:
-              platform = 'All'
+              prev_win_commit, prev_win_tag = find_prev_tag_commit(r'^(?:windows-v|v\d)')
+              prev_and_commit, prev_and_tag = find_prev_tag_commit(r'^(?:android-v|v\d)')
+              prev_ios_commit, prev_ios_tag = find_prev_tag_commit(r'^(?:ios-v|v\d)')
+              build_win = has_changes(prev_win_commit, ['windows/', 'common/', 'scripts/'])
+              build_and = has_changes(prev_and_commit, ['android/', 'common/', 'scripts/'])
+              build_ios = has_changes(prev_ios_commit, ['ios/', 'common/', 'scripts/'])
+              reason = (
+                  f'diff check (windows vs {prev_win_tag or "<root>"}: {build_win}; '
+                  f'android vs {prev_and_tag or "<root>"}: {build_and}; '
+                  f'ios vs {prev_ios_tag or "<root>"}: {build_ios})'
+              )
+
+          print(f'Tag: {tag}, Version: {clean_version}, Mode: {reason}')
+          print(
+              f'build_windows={str(build_win).lower()}, '
+              f'build_android={str(build_and).lower()}, '
+              f'build_ios={str(build_ios).lower()}'
+          )
 
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
               f.write(f'tag={tag}\n')
               f.write(f'version={clean_version}\n')
-              f.write(f'platform={platform}\n')
+              f.write(f'build_windows={str(build_win).lower()}\n')
+              f.write(f'build_android={str(build_and).lower()}\n')
+              f.write(f'build_ios={str(build_ios).lower()}\n')
           PY
 
-  build-and-package:
-    needs: plan
+  build-windows:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.build_windows == 'true'
     runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build, validate and package themes
+      - name: Build, validate and package Windows theme
         shell: powershell
         run: |
-          .\scripts\package.ps1 -Platform "${{ needs.plan.outputs.platform }}" -Version "${{ needs.plan.outputs.version }}"
+          .\scripts\package.ps1 -Platform Windows -Version "${{ needs.detect-changes.outputs.version }}"
 
-      - name: Upload release artifacts
+      - name: Upload Windows dist artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-dist
+          name: windows-dist
+          path: dist/*
+          if-no-files-found: error
+
+  build-android:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.build_android == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build, validate and package Android theme
+        shell: powershell
+        run: |
+          .\scripts\package.ps1 -Platform Android -Version "${{ needs.detect-changes.outputs.version }}"
+
+      - name: Upload Android dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-dist
+          path: dist/*
+          if-no-files-found: error
+
+  build-ios:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.build_ios == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build, validate and package iOS theme
+        shell: powershell
+        run: |
+          .\scripts\package.ps1 -Platform iOS -Version "${{ needs.detect-changes.outputs.version }}"
+
+      - name: Upload iOS dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-dist
           path: dist/*
           if-no-files-found: error
 
   publish-release:
-    needs: [plan, build-and-package]
+    needs: [detect-changes, build-windows, build-android, build-ios]
+    if: >-
+      !cancelled() &&
+      needs.detect-changes.result == 'success' &&
+      (needs.build-windows.result == 'success' || needs.build-windows.result == 'skipped') &&
+      (needs.build-android.result == 'success' || needs.build-android.result == 'skipped') &&
+      (needs.build-ios.result == 'success' || needs.build-ios.result == 'skipped') &&
+      (needs.build-windows.result == 'success' || needs.build-android.result == 'success' || needs.build-ios.result == 'success')
     runs-on: ubuntu-latest
     steps:
-      - name: Download packaged artifacts
+      - name: Download Windows artifacts
+        if: needs.build-windows.result == 'success'
         uses: actions/download-artifact@v4
         with:
-          name: release-dist
+          name: windows-dist
+          path: release-assets
+
+      - name: Download Android artifacts
+        if: needs.build-android.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: android-dist
+          path: release-assets
+
+      - name: Download iOS artifacts
+        if: needs.build-ios.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-dist
           path: release-assets
 
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          REL_TAG: ${{ needs.plan.outputs.tag }}
-          REL_VER: ${{ needs.plan.outputs.version }}
-          REL_PLATFORM: ${{ needs.plan.outputs.platform }}
+          REL_TAG: ${{ needs.detect-changes.outputs.tag }}
+          REL_VER: ${{ needs.detect-changes.outputs.version }}
+          BUILT_WINDOWS: ${{ needs.build-windows.result == 'success' }}
+          BUILT_ANDROID: ${{ needs.build-android.result == 'success' }}
+          BUILT_IOS: ${{ needs.build-ios.result == 'success' }}
         shell: bash
         run: |
           python3 - <<'PY'
           import os
 
           ver = os.environ['REL_VER']
-          plat = os.environ['REL_PLATFORM']
+          built_win = os.environ['BUILT_WINDOWS'] == 'true'
+          built_and = os.environ['BUILT_ANDROID'] == 'true'
+          built_ios = os.environ['BUILT_IOS'] == 'true'
 
-          if plat == 'Windows':
-              title = f'Neon Horizon Synthwave Telegram Theme v{ver} [Windows]'
-          elif plat == 'Android':
-              title = f'Neon Horizon Synthwave Telegram Theme v{ver} [Android]'
-          elif plat == 'iOS':
-              title = f'Neon Horizon Synthwave Telegram Theme v{ver} [iOS]'
-          else:
+          platforms_built = [
+              name for flag, name in [
+                  (built_win, 'Windows'),
+                  (built_and, 'Android'),
+                  (built_ios, 'iOS'),
+              ] if flag
+          ]
+
+          if len(platforms_built) == 3:
               title = f'Neon Horizon Synthwave Telegram Theme v{ver}'
+          else:
+              title = f'Neon Horizon Synthwave Telegram Theme v{ver} [{" + ".join(platforms_built)}]'
 
           lines = [
               f'## Neon Horizon — Synthwave Telegram Theme (v{ver})',
@@ -127,14 +279,14 @@ jobs:
               'Синтвейв-тема оформления в эстетике **Outrun 84 / Neon Horizon** для официальных клиентов Telegram.',
               '',
           ]
-          if plat in ('All', 'Windows'):
+          if built_win:
               lines.extend([
                   '### Windows (Telegram Desktop)',
-                  f'- Готовый файл темы: `NeonHorizonSynthwave-windows.tdesktop-theme` (467 цветовых ключей + фон `1920x1080`).',
+                  f'- Готовый файл темы: `NeonHorizonSynthwave-windows.tdesktop-theme` (467 цветовых ключей, `1–2 px` неоновая подсветка нижней грани баблов, `1 px` разделители панелей и фон `1920x1080`).',
                   f'- Полный пакет с исходниками: `NeonHorizonSynthwave-v{ver}-windows.zip` (SHA-256 в `checksums-windows-sha256.txt`).',
                   '',
               ])
-          if plat in ('All', 'Android'):
+          if built_and:
               lines.extend([
                   '### Android (Telegram)',
                   f'- Полная тема со встроенным портретным фоном (`1080x2160`): `NeonHorizonSynthwave-android.attheme`.',
@@ -142,7 +294,7 @@ jobs:
                   f'- Полный пакет с исходниками: `NeonHorizonSynthwave-v{ver}-android.zip` (SHA-256 в `checksums-android-sha256.txt`).',
                   '',
               ])
-          if plat in ('All', 'iOS'):
+          if built_ios:
               lines.extend([
                   '### iPhone / iOS (Telegram)',
                   '- Файл темы с нативным градиентом и неоновым `stroke` + `shadow` свечением баблов: `NeonHorizonSynthwave-ios.tgios-theme`.',

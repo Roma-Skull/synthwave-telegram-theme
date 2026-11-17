@@ -69,6 +69,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_themes.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\package.ps1 -Version 1.0.2
 ```
 
+### Схема релизов и автоопределение изменений
+
+Workflow [`.github/workflows/release.yml`](.github/workflows/release.yml) использует задачу `detect-changes`:
+- **Общий тег `v*` (например `v1.0.3`):** проверяет `git diff` с предыдущим тегом для каждой платформы (`windows/`, `android/`, `ios/` + `common/`, `scripts/`) и собирает/публикует **только те платформы, где были изменения**.
+- **Теги конкретной платформы (`windows-v*`, `android-v*`, `ios-v*`):** принудительно собирают только выбранную платформу.
+- **Ручной запуск (`workflow_dispatch`):** позволяет выбрать `auto`, `All`, `Windows`, `Android` или `iOS`.
+
 ### Структура проекта
 
 ```text
