@@ -1,0 +1,161 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'windows-v*'
+      - 'android-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0, windows-v1.0.0, android-v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+      platforms:
+        description: 'Platforms to package'
+        type: choice
+        required: true
+        default: 'All'
+        options:
+          - All
+          - Windows
+          - Android
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      platform: ${{ steps.meta.outputs.platform }}
+    steps:
+      - name: Determine release tag and platform scope
+        id: meta
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_PLATFORMS: ${{ inputs.platforms }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+
+          event_name = os.environ['EVENT_NAME']
+          tag = os.environ['INPUT_TAG'] if event_name == 'workflow_dispatch' else os.environ['REF_NAME']
+          clean_version = re.sub(r'^(?:[a-zA-Z0-9_-]+-)?[vV]', '', tag)
+
+          if event_name == 'workflow_dispatch':
+              platform = os.environ.get('INPUT_PLATFORMS', 'All')
+          elif tag.lower().startswith('windows-v'):
+              platform = 'Windows'
+          elif tag.lower().startswith('android-v'):
+              platform = 'Android'
+          else:
+              platform = 'All'
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write(f'tag={tag}\n')
+              f.write(f'version={clean_version}\n')
+              f.write(f'platform={platform}\n')
+          PY
+
+  build-and-package:
+    needs: plan
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build, validate and package themes
+        shell: powershell
+        run: |
+          .\scripts\package.ps1 -Platform "${{ needs.plan.outputs.platform }}" -Version "${{ needs.plan.outputs.version }}"
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: dist/*
+          if-no-files-found: error
+
+  publish-release:
+    needs: [plan, build-and-package]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: release-assets
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          REL_TAG: ${{ needs.plan.outputs.tag }}
+          REL_VER: ${{ needs.plan.outputs.version }}
+          REL_PLATFORM: ${{ needs.plan.outputs.platform }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+
+          ver = os.environ['REL_VER']
+          plat = os.environ['REL_PLATFORM']
+
+          if plat == 'Windows':
+              title = f'Neon Horizon Synthwave Telegram Theme v{ver} [Windows]'
+          elif plat == 'Android':
+              title = f'Neon Horizon Synthwave Telegram Theme v{ver} [Android]'
+          else:
+              title = f'Neon Horizon Synthwave Telegram Theme v{ver}'
+
+          lines = [
+              f'## Neon Horizon — Synthwave Telegram Theme (v{ver})',
+              '',
+              'Синтвейв-тема оформления в эстетике **Outrun 84 / Neon Horizon** для официальных клиентов Telegram.',
+              '',
+          ]
+          if plat in ('All', 'Windows'):
+              lines.extend([
+                  '### Windows (Telegram Desktop)',
+                  f'- Готовый файл темы: `NeonHorizonSynthwave-windows.tdesktop-theme` (467 цветовых ключей + фон `1920x1080`).',
+                  f'- Полный пакет с исходниками: `NeonHorizonSynthwave-v{ver}-windows.zip` (SHA-256 в `checksums-windows-sha256.txt`).',
+                  '',
+              ])
+          if plat in ('All', 'Android'):
+              lines.extend([
+                  '### Android (Telegram)',
+                  f'- Полная тема со встроенным портретным фоном (`1080x2160`): `NeonHorizonSynthwave-android.attheme`.',
+                  f'- Вариант с градиентным фоном без картинки: `NeonHorizonSynthwave-no-bg-android.attheme`.',
+                  f'- Полный пакет с исходниками: `NeonHorizonSynthwave-v{ver}-android.zip` (SHA-256 в `checksums-android-sha256.txt`).',
+                  '',
+              ])
+
+          with open('/tmp/release_title.txt', 'w', encoding='utf-8') as f:
+              f.write(title)
+          with open('/tmp/release_notes.md', 'w', encoding='utf-8') as f:
+              f.write('\n'.join(lines))
+          PY
+
+          title=$(cat /tmp/release_title.txt)
+          shopt -s nullglob
+          assets=(release-assets/*)
+          if [ ${#assets[@]} -eq 0 ]; then
+            echo "No release assets found to publish" >&2
+            exit 1
+          fi
+
+          if gh release view "$REL_TAG" >/dev/null 2>&1; then
+            gh release upload "$REL_TAG" "${assets[@]}" --clobber
+            gh release edit "$REL_TAG" --title "$title" --notes-file /tmp/release_notes.md
+          else
+            gh release create "$REL_TAG" "${assets[@]}" \
+              --title "$title" \
+              --notes-file /tmp/release_notes.md
+          fi

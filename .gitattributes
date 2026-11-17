@@ -1,0 +1,6 @@
+# Preserve exact binary/LF bytes for Telegram theme packages
+*.attheme -text
+*.tdesktop-theme -text
+*.jpg binary
+*.png binary
+*.yml text eol=lf

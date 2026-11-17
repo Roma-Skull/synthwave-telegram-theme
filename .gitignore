@@ -1,0 +1,9 @@
+# Packaged distribution archives (generated via scripts/package.ps1)
+dist/
+
+# OS & editor artifacts
+Thumbs.db
+.DS_Store
+*.tmp
+*.log
+scratch/

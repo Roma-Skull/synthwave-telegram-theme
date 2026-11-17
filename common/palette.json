@@ -1,0 +1,70 @@
+{
+  "name": "Neon Horizon — Synthwave",
+  "slug": "neon-horizon-synthwave",
+  "description": "1980s Synthwave / Outrun 84 dark theme for Telegram Desktop (Windows) & Telegram Android, inspired by Neon Horizon.",
+  "colors": {
+    "voidBg": "#080513",
+    "deepBg": "#0B0718",
+    "windowBg": "#0E0920",
+    "surfaceBg": "#140B29",
+    "surfaceElevated": "#1B0F38",
+    "surfaceHover": "#25144B",
+    "surfaceRipple": "#321A63",
+    "surfaceActive": "#2D1659",
+    "surfaceHeader": "#120A26",
+    "surfaceSidebar": "#090514",
+    "borderSubtle": "#2D1856",
+    "borderStrong": "#4A228A",
+
+    "textPrimary": "#F2F8FF",
+    "textBright": "#FFFFFF",
+    "textSecondary": "#B8A4DE",
+    "textMuted": "#8370AD",
+    "textDisabled": "#57477D",
+    "textCyan": "#E0F6FF",
+
+    "cyan": "#00F0FF",
+    "cyanSoft": "#48ECFF",
+    "cyanHover": "#6BF3FF",
+    "cyanMuted": "#2AA6C4",
+    "cyanDark": "#114866",
+
+    "magenta": "#FF2A85",
+    "magentaSoft": "#FF5CA3",
+    "magentaBright": "#FF3D94",
+    "magentaMuted": "#A82462",
+    "magentaDark": "#4A1236",
+
+    "violet": "#B537F2",
+    "violetSoft": "#CA6BFF",
+    "violetDeep": "#6F23B8",
+
+    "amber": "#FFE85F",
+    "orange": "#FF7A45",
+    "green": "#3CF2B8",
+    "greenDark": "#1C7A60",
+    "red": "#FF476F",
+    "redDark": "#8F1D3D",
+
+    "msgInBg": "#150D2B",
+    "msgInBgSelected": "#2F195C",
+    "msgOutBg": "#2A124A",
+    "msgOutBgGrad1": "#3A1766",
+    "msgOutBgGrad2": "#241042",
+    "msgOutBgSelected": "#471D78",
+    "msgInDate": "#9582C2",
+    "msgOutDate": "#C8A6F5",
+    "msgServiceBg": "#140A2BD8",
+    "msgServiceBgSelected": "#321863E6"
+  },
+  "peers": [
+    { "name": "#FF5A7E", "avatar1": "#FF5A7E", "avatar2": "#C92A56" },
+    { "name": "#47F5B8", "avatar1": "#47F5B8", "avatar2": "#189E78" },
+    { "name": "#FFD45C", "avatar1": "#FFD45C", "avatar2": "#D9822B" },
+    { "name": "#38E8FF", "avatar1": "#38E8FF", "avatar2": "#1E88E5" },
+    { "name": "#C97BFF", "avatar1": "#C97BFF", "avatar2": "#7C2AE8" },
+    { "name": "#FF4FA8", "avatar1": "#FF4FA8", "avatar2": "#B82574" },
+    { "name": "#2EE6D6", "avatar1": "#2EE6D6", "avatar2": "#1A8FA3" },
+    { "name": "#FF944D", "avatar1": "#FF944D", "avatar2": "#C94E24" }
+  ]
+}
