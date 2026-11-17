@@ -1,11 +1,11 @@
 #requires -Version 5.1
 <#
 .SYNOPSIS
-    Packages Neon Horizon Synthwave Telegram theme release artifacts for Windows and Android into dist/.
+    Packages Neon Horizon Synthwave Telegram theme release artifacts for Windows, Android, and iOS into dist/.
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('All', 'Windows', 'Android')]
+    [ValidateSet('All', 'Windows', 'Android', 'iOS')]
     [string]$Platform = 'All',
     [string]$Version,
     [switch]$SkipBuild
@@ -143,6 +143,55 @@ if ($Platform -eq 'All' -or $Platform -eq 'Android') {
         releasedAtUtc = [DateTime]::UtcNow.ToString('o')
     }
     [System.IO.File]::WriteAllText((Join-Path $DistDir 'manifest-android.json'), ($andManifest | ConvertTo-Json -Depth 4), $utf8NoBom)
+}
+
+if ($Platform -eq 'All' -or $Platform -eq 'iOS') {
+    $iosDir = Join-Path $RepoRoot 'ios'
+    $iosVer = Resolve-CleanVersion $iosDir $Version
+
+    $srcIos = Join-Path $iosDir 'NeonHorizonSynthwave.tgios-theme'
+    $srcBg = Join-Path $iosDir 'background_ios.jpg'
+    $srcReadme = Join-Path $iosDir 'README.md'
+
+    $distIos = Join-Path $DistDir 'NeonHorizonSynthwave-ios.tgios-theme'
+    Copy-Item -Path $srcIos -Destination $distIos -Force
+
+    $pkgName = "NeonHorizonSynthwave-v$iosVer-ios"
+    $stage = Join-Path $DistDir $pkgName
+    if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+    New-Item -ItemType Directory -Path $stage -Force | Out-Null
+    Copy-Item $srcIos (Join-Path $stage 'NeonHorizonSynthwave.tgios-theme') -Force
+    Copy-Item $srcBg (Join-Path $stage 'background_ios.jpg') -Force
+    if (Test-Path $srcReadme) { Copy-Item $srcReadme (Join-Path $stage 'README.md') -Force }
+
+    $iosZip = Join-Path $DistDir "$pkgName.zip"
+    if (Test-Path $iosZip) { Remove-Item $iosZip -Force }
+    Compress-Archive -Path "$stage\*" -DestinationPath $iosZip -CompressionLevel Optimal -Force
+    Remove-Item $stage -Recurse -Force
+
+    $iosHash = (Get-FileHash -Path $distIos -Algorithm SHA256).Hash.ToLowerInvariant()
+    $zipHash = (Get-FileHash -Path $iosZip -Algorithm SHA256).Hash.ToLowerInvariant()
+    $iosSize = (Get-Item $distIos).Length
+
+    $iosChecksums = Join-Path $DistDir 'checksums-ios-sha256.txt'
+    [System.IO.File]::WriteAllLines($iosChecksums, @(
+        "$iosHash  $(Split-Path -Leaf $distIos)"
+        "$zipHash  $(Split-Path -Leaf $iosZip)"
+    ), $utf8NoBom)
+
+    $iosManifest = [ordered]@{
+        schemaVersion = 1
+        platform      = 'ios'
+        client        = 'Telegram iOS'
+        tag           = "ios-v$iosVer"
+        version       = $iosVer
+        asset         = (Split-Path -Leaf $distIos)
+        zipAsset      = (Split-Path -Leaf $iosZip)
+        sha256        = $iosHash
+        sizeBytes     = $iosSize
+        releasedAtUtc = [DateTime]::UtcNow.ToString('o')
+    }
+    [System.IO.File]::WriteAllText((Join-Path $DistDir 'manifest-ios.json'), ($iosManifest | ConvertTo-Json -Depth 4), $utf8NoBom)
 }
 
 Write-Host "Packaged release artifacts in ${DistDir}:"

@@ -34,6 +34,17 @@ $palette = Get-Content -Path $palettePath -Raw -Encoding UTF8 | ConvertFrom-Json
 $c = $palette.colors
 $peers = $palette.peers
 
+function To-IosHex6([string]$hex) {
+    $h = $hex.Trim().TrimStart('#').ToLowerInvariant()
+    if ($h.Length -eq 8) { return $h.Substring(0, 6) }
+    return $h
+}
+
+function To-IosHex8([string]$hex6, [string]$alphaHex) {
+    # Telegram iOS uses AARRGGBB (no # prefix)
+    return $alphaHex.ToLowerInvariant() + (To-IosHex6 $hex6)
+}
+
 function To-LowerHex6([string]$hex) {
     $h = $hex.Trim().TrimStart('#')
     if ($h.Length -eq 8) { $h = $h.Substring(0, 6) }
@@ -1465,7 +1476,597 @@ $andNoBgPath = Join-Path $RepoRoot 'android\NeonHorizonSynthwave-no-bg.attheme'
 [System.IO.File]::WriteAllBytes($andNoBgPath, $utf8NoBom.GetBytes(($noBgLines -join "`n") + "`n"))
 
 # ==============================================================================
-# 3. VALIDATION CHECKS (Desktop ZIP + Android Theme.java Parser Simulation)
+# 3. iOS / iPHONE: Telegram iOS (.tgios-theme)
+# ==============================================================================
+Write-Host 'Building iOS / iPhone Telegram theme (.tgios-theme)...'
+
+$iosVoid = To-IosHex6 $c.voidBg
+$iosDeep = To-IosHex6 $c.deepBg
+$iosWin = To-IosHex6 $c.windowBg
+$iosSurf = To-IosHex6 $c.surfaceBg
+$iosElev = To-IosHex6 $c.surfaceElevated
+$iosHover = To-IosHex6 $c.surfaceHover
+$iosActive = To-IosHex6 $c.surfaceActive
+$iosHdr = To-IosHex6 $c.surfaceHeader
+$iosBrd = To-IosHex6 $c.borderSubtle
+$iosBrdStrong = To-IosHex6 $c.borderStrong
+
+$iosTxtPri = To-IosHex6 $c.textPrimary
+$iosTxtBrt = To-IosHex6 $c.textBright
+$iosTxtSec = To-IosHex6 $c.textSecondary
+$iosTxtMut = To-IosHex6 $c.textMuted
+$iosTxtDis = To-IosHex6 $c.textDisabled
+$iosTxtCyn = To-IosHex6 $c.textCyan
+
+$iosCyan = To-IosHex6 $c.cyan
+$iosCyanSoft = To-IosHex6 $c.cyanSoft
+$iosCyanMuted = To-IosHex6 $c.cyanMuted
+$iosMag = To-IosHex6 $c.magenta
+$iosMagSoft = To-IosHex6 $c.magentaSoft
+$iosMagBright = To-IosHex6 $c.magentaBright
+$iosViolet = To-IosHex6 $c.violet
+$iosVioletSoft = To-IosHex6 $c.violetSoft
+$iosAmber = To-IosHex6 $c.amber
+$iosOrange = To-IosHex6 $c.orange
+$iosGreen = To-IosHex6 $c.green
+$iosRed = To-IosHex6 $c.red
+
+$iosInBg = To-IosHex6 $c.msgInBg
+$iosInSel = To-IosHex6 $c.msgInBgSelected
+$iosOutBg1 = To-IosHex6 $c.msgOutBgGrad1
+$iosOutBg2 = To-IosHex6 $c.msgOutBgGrad2
+$iosOutSel = To-IosHex6 $c.msgOutBgSelected
+
+$iosTheme = @"
+// Neon Horizon — Synthwave / Outrun 84 Theme for Telegram iOS (iPhone / iPad)
+// Repository: https://github.com/Roma-Skull/synthwave-telegram-theme
+name: Neon Horizon — Synthwave
+basedOn: nighttinted
+dark: true
+intro:
+  statusBar: white
+  primaryText: $iosTxtPri
+  accentText: $iosCyan
+  disabledText: $iosTxtDis
+  startButton: $iosMag
+  dot: $iosTxtMut
+passcode:
+  bg:
+    top: $iosElev
+    bottom: $iosVoid
+  button: $iosSurf
+root:
+  statusBar: white
+  tabBar:
+    background: $(To-IosHex8 $c.surfaceHeader 'e6')
+    separator: $iosBrdStrong
+    icon: $iosTxtMut
+    selectedIcon: $iosCyan
+    text: $iosTxtMut
+    selectedText: $iosCyan
+    badgeBackground: $iosMag
+    badgeStroke: $iosMag
+    badgeText: $iosTxtBrt
+  navBar:
+    button: $iosCyan
+    disabledButton: $iosTxtDis
+    primaryText: $iosTxtPri
+    secondaryText: $iosTxtSec
+    control: $iosCyanSoft
+    accentText: $iosCyan
+    background: $(To-IosHex8 $c.surfaceHeader 'e6')
+    opaqueBackground: $iosHdr
+    separator: $iosBrdStrong
+    badgeFill: $iosMag
+    badgeStroke: $iosMag
+    badgeText: $iosTxtBrt
+    segmentedBg: $iosElev
+    segmentedFg: $iosHover
+    segmentedText: $iosTxtPri
+    segmentedDivider: $iosBrdStrong
+    clearButtonBackground: $(To-IosHex8 $c.cyan '22')
+    clearButtonForeground: $iosCyan
+  searchBar:
+    background: $iosHdr
+    accent: $iosCyan
+    inputFill: $(To-IosHex8 $c.violet '24')
+    inputText: $iosTxtPri
+    inputPlaceholderText: $iosTxtMut
+    inputIcon: $iosCyanSoft
+    inputClearButton: $iosMagSoft
+    separator: $iosBrd
+  keyboard: dark
+list:
+  blocksBg: $iosVoid
+  modalBlocksBg: $iosDeep
+  plainBg: $iosWin
+  modalPlainBg: $iosSurf
+  primaryText: $iosTxtPri
+  secondaryText: $iosTxtSec
+  disabledText: $iosTxtDis
+  accent: $iosCyan
+  highlighted: $iosGreen
+  destructive: $iosRed
+  placeholderText: $iosTxtMut
+  itemBlocksBg: $iosSurf
+  itemModalBlocksBg: $iosElev
+  itemHighlightedBg: $iosHover
+  blocksSeparator: $iosBrd
+  plainSeparator: $iosBrd
+  disclosureArrow: $iosTxtMut
+  sectionHeaderText: $iosCyanSoft
+  freeText: $iosTxtSec
+  freeTextError: $iosRed
+  freeTextSuccess: $iosGreen
+  freeMonoIcon: $iosTxtSec
+  switch:
+    frame: $iosBrdStrong
+    handle: $iosTxtBrt
+    content: $iosMag
+    positive: $iosCyan
+    negative: $iosRed
+  disclosureActions:
+    neutral1:
+      bg: $iosViolet
+      fg: $iosTxtBrt
+    neutral2:
+      bg: $iosOrange
+      fg: $iosTxtBrt
+    destructive:
+      bg: $iosRed
+      fg: $iosTxtBrt
+    constructive:
+      bg: $iosGreen
+      fg: $iosVoid
+    accent:
+      bg: $iosMag
+      fg: $iosTxtBrt
+    warning:
+      bg: $iosAmber
+      fg: $iosVoid
+    inactive:
+      bg: $iosBrdStrong
+      fg: $iosTxtBrt
+  check:
+    bg: $iosMag
+    stroke: $iosTxtMut
+    fg: $iosTxtBrt
+  controlSecondary: $iosTxtMut
+  freeInputField:
+    bg: $iosElev
+    stroke: $iosBrdStrong
+    placeholder: $iosTxtMut
+    primary: $iosTxtPri
+    control: $iosCyanSoft
+  freePlainInputField:
+    bg: $iosElev
+    stroke: $iosBrdStrong
+    placeholder: $iosTxtMut
+    primary: $iosTxtPri
+    control: $iosCyanSoft
+  mediaPlaceholder: $iosElev
+  scrollIndicator: $(To-IosHex8 $c.violet '88')
+  pageIndicatorInactive: $(To-IosHex8 $c.textMuted '66')
+  inputClearButton: $iosMagSoft
+  itemBarChart:
+    color1: $iosCyan
+    color2: $iosMag
+    color3: $iosViolet
+  itemInputField:
+    bg: $iosElev
+    stroke: $iosBrdStrong
+    placeholder: $iosTxtMut
+    primary: $iosTxtPri
+    control: $iosCyanSoft
+  paymentOption:
+    inactiveFill: $(To-IosHex8 $c.green '33')
+    inactiveForeground: $iosGreen
+    activeFill: $iosGreen
+    activeForeground: $iosVoid
+chatList:
+  bg: $iosWin
+  itemSeparator: $iosBrd
+  itemBg: $iosWin
+  pinnedItemBg: $iosSurf
+  itemHighlightedBg: $iosHover
+  pinnedItemHighlightedBg: $iosActive
+  itemSelectedBg: $iosActive
+  title: $iosTxtPri
+  secretTitle: $iosGreen
+  dateText: $iosTxtMut
+  authorName: $iosTxtCyn
+  messageText: $iosTxtSec
+  messageHighlightedText: $iosTxtBrt
+  messageDraftText: $iosMagSoft
+  checkmark: $iosCyan
+  pendingIndicator: $iosTxtMut
+  failedFill: $iosRed
+  failedFg: $iosTxtBrt
+  muteIcon: $iosTxtMut
+  unreadBadgeActiveBg: $iosMag
+  unreadBadgeActiveText: $iosTxtBrt
+  unreadBadgeInactiveBg: $iosBrdStrong
+  unreadBadgeInactiveText: $iosTxtPri
+  reactionBadgeActiveBg: $iosMag
+  pinnedBadge: $iosVioletSoft
+  pinnedSearchBar: $iosElev
+  regularSearchBar: $iosElev
+  sectionHeaderBg: $iosDeep
+  sectionHeaderText: $iosCyanSoft
+  verifiedIconBg: $iosCyan
+  verifiedIconFg: $iosVoid
+  secretIcon: $iosGreen
+  pinnedArchiveAvatar:
+    background:
+      top: $iosViolet
+      bottom: $iosMag
+    foreground: $iosTxtBrt
+  unpinnedArchiveAvatar:
+    background:
+      top: $iosElev
+      bottom: $iosSurf
+    foreground: $iosCyanSoft
+  onlineDot: $iosCyan
+  storyUnseen:
+    top: $iosCyan
+    bottom: $iosMag
+  storyUnseenPrivate:
+    top: $iosGreen
+    bottom: $iosCyan
+  storySeen:
+    top: $iosBrdStrong
+    bottom: $iosBrd
+chat:
+  defaultWallpaper: 080513 1e0c42 40125e 0c0824 45
+  animateMessageColors: false
+  message:
+    incoming:
+      bubble:
+        withWp:
+          bg: $(To-IosHex8 $c.msgInBg 'dd')
+          gradientBg: $(To-IosHex8 $c.msgInBg 'dd')
+          highlightedBg: $(To-IosHex8 $c.msgInBgSelected 'ee')
+          stroke: $(To-IosHex8 $c.cyan '66')
+          shadow:
+            color: $(To-IosHex8 $c.cyan '55')
+            radius: 8
+            verticalOffset: 0
+          reactionInactiveBg: $(To-IosHex8 $c.violet '28')
+          reactionInactiveFg: $iosTxtPri
+          reactionInactiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+          reactionActiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+          reactionActiveBg: $iosMag
+          reactionActiveFg: $iosTxtBrt
+        withoutWp:
+          bg: $iosInBg
+          gradientBg: $iosInBg
+          highlightedBg: $iosInSel
+          stroke: $(To-IosHex8 $c.cyan '66')
+          shadow:
+            color: $(To-IosHex8 $c.cyan '55')
+            radius: 8
+            verticalOffset: 0
+          reactionInactiveBg: $(To-IosHex8 $c.violet '28')
+          reactionInactiveFg: $iosTxtPri
+          reactionInactiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+          reactionActiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+          reactionActiveBg: $iosMag
+          reactionActiveFg: $iosTxtBrt
+      primaryText: $iosTxtPri
+      secondaryText: $(To-IosHex8 $c.msgInDate 'ff')
+      linkText: $iosCyanSoft
+      linkHighlight: $(To-IosHex8 $c.cyan '44')
+      scam: $iosRed
+      textHighlight: $(To-IosHex8 $c.amber '66')
+      accentText: $iosCyanSoft
+      accentControl: $iosCyan
+      accentControlDisabled: $iosTxtMut
+      mediaActiveControl: $iosCyan
+      mediaInactiveControl: $iosBrdStrong
+      mediaControlInnerBg: $iosInBg
+      pendingActivity: $iosTxtMut
+      fileTitle: $iosTxtPri
+      fileDescription: $iosTxtSec
+      fileDuration: $iosTxtSec
+      mediaPlaceholder: $iosElev
+      polls:
+        radioButton: $iosTxtMut
+        radioProgress: $iosCyan
+        highlight: $(To-IosHex8 $c.cyan '22')
+        separator: $iosBrd
+        bar: $iosCyan
+        barIconForeground: $iosVoid
+        barPositive: $iosGreen
+        barNegative: $iosRed
+      actionButtonsBg:
+        withWp: $(To-IosHex8 $c.surfaceHeader 'cc')
+        withoutWp: $iosElev
+      actionButtonsStroke:
+        withWp: $(To-IosHex8 $c.violet '66')
+        withoutWp: $iosBrdStrong
+      actionButtonsText:
+        withWp: $iosTxtPri
+        withoutWp: $iosTxtPri
+      textSelection: $(To-IosHex8 $c.cyan '3a')
+      textSelectionKnob: $iosCyan
+    outgoing:
+      bubble:
+        withWp:
+          bg: $(To-IosHex8 $c.msgOutBgGrad1 'eb')
+          gradientBg: $(To-IosHex8 $c.msgOutBgGrad2 'eb')
+          highlightedBg: $(To-IosHex8 $c.msgOutBgSelected 'f5')
+          stroke: $(To-IosHex8 $c.magenta '77')
+          shadow:
+            color: $(To-IosHex8 $c.magenta '60')
+            radius: 9
+            verticalOffset: 0
+          reactionInactiveBg: $(To-IosHex8 $c.cyan '28')
+          reactionInactiveFg: $iosTxtBrt
+          reactionInactiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+          reactionActiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+          reactionActiveBg: $iosCyan
+          reactionActiveFg: $iosVoid
+        withoutWp:
+          bg: $iosOutBg1
+          gradientBg: $iosOutBg2
+          highlightedBg: $iosOutSel
+          stroke: $(To-IosHex8 $c.magenta '77')
+          shadow:
+            color: $(To-IosHex8 $c.magenta '60')
+            radius: 9
+            verticalOffset: 0
+          reactionInactiveBg: $(To-IosHex8 $c.cyan '28')
+          reactionInactiveFg: $iosTxtBrt
+          reactionInactiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+          reactionActiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+          reactionActiveBg: $iosCyan
+          reactionActiveFg: $iosVoid
+      primaryText: $iosTxtBrt
+      secondaryText: $(To-IosHex8 $c.msgOutDate 'ff')
+      linkText: $iosCyan
+      linkHighlight: $(To-IosHex8 $c.cyan '44')
+      scam: $iosRed
+      textHighlight: $(To-IosHex8 $c.amber '66')
+      accentText: $iosCyan
+      accentControl: $iosCyan
+      accentControlDisabled: $iosTxtMut
+      mediaActiveControl: $iosCyan
+      mediaInactiveControl: $iosBrdStrong
+      mediaControlInnerBg: $iosOutBg2
+      pendingActivity: $iosMagSoft
+      fileTitle: $iosTxtBrt
+      fileDescription: $iosTxtCyn
+      fileDuration: $iosTxtCyn
+      mediaPlaceholder: $iosHover
+      polls:
+        radioButton: $iosTxtCyn
+        radioProgress: $iosCyan
+        highlight: $(To-IosHex8 $c.cyan '22')
+        separator: $iosBrdStrong
+        bar: $iosCyan
+        barIconForeground: $iosVoid
+        barPositive: $iosGreen
+        barNegative: $iosRed
+      actionButtonsBg:
+        withWp: $(To-IosHex8 $c.surfaceHeader 'cc')
+        withoutWp: $iosElev
+      actionButtonsStroke:
+        withWp: $(To-IosHex8 $c.cyan '66')
+        withoutWp: $iosBrdStrong
+      actionButtonsText:
+        withWp: $iosTxtBrt
+        withoutWp: $iosTxtBrt
+      textSelection: $(To-IosHex8 $c.magenta '44')
+      textSelectionKnob: $iosCyan
+    freeform:
+      withWp:
+        bg: $(To-IosHex8 $c.surfaceHeader 'cc')
+        gradientBg: $(To-IosHex8 $c.surfaceHeader 'cc')
+        highlightedBg: $(To-IosHex8 $c.surfaceHover 'dd')
+        stroke: $(To-IosHex8 $c.violet '55')
+        shadow:
+          color: $(To-IosHex8 $c.violet '48')
+          radius: 8
+          verticalOffset: 0
+        reactionInactiveBg: $(To-IosHex8 $c.surfaceHeader 'cc')
+        reactionInactiveFg: $iosTxtPri
+        reactionInactiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+        reactionActiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+        reactionActiveBg: $iosMag
+        reactionActiveFg: $iosTxtBrt
+      withoutWp:
+        bg: $iosHdr
+        gradientBg: $iosHdr
+        highlightedBg: $iosHover
+        stroke: $(To-IosHex8 $c.violet '55')
+        shadow:
+          color: $(To-IosHex8 $c.violet '48')
+          radius: 8
+          verticalOffset: 0
+        reactionInactiveBg: $iosHdr
+        reactionInactiveFg: $iosTxtPri
+        reactionInactiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+        reactionActiveMediaPlaceholder: $(To-IosHex8 $c.voidBg '44')
+        reactionActiveBg: $iosMag
+        reactionActiveFg: $iosTxtBrt
+    infoPrimaryText: $iosTxtPri
+    infoLinkText: $iosCyan
+    outgoingCheck: $iosCyan
+    mediaDateAndStatusBg: $(To-IosHex8 $c.voidBg '88')
+    mediaDateAndStatusText: $iosTxtBrt
+    shareButtonBg:
+      withWp: $(To-IosHex8 $c.surfaceHeader 'cc')
+      withoutWp: $iosElev
+    shareButtonStroke:
+      withWp: $(To-IosHex8 $c.violet '66')
+      withoutWp: $iosBrdStrong
+    shareButtonFg:
+      withWp: $iosCyanSoft
+      withoutWp: $iosCyanSoft
+    mediaOverlayControl:
+      bg: $(To-IosHex8 $c.voidBg '99')
+      fg: $iosCyan
+    selectionControl:
+      bg: $iosMag
+      stroke: $iosTxtBrt
+      fg: $iosTxtBrt
+    deliveryFailed:
+      bg: $iosRed
+      fg: $iosTxtBrt
+    mediaHighlightOverlay: $(To-IosHex8 $c.cyan '55')
+    stickerPlaceholder:
+      withWp: $(To-IosHex8 $c.surfaceElevated '88')
+      withoutWp: $(To-IosHex8 $c.surfaceElevated '88')
+    stickerPlaceholderShimmer:
+      withWp: $(To-IosHex8 $c.violet '33')
+      withoutWp: $(To-IosHex8 $c.violet '33')
+  serviceMessage:
+    components:
+      withDefaultWp:
+        bg: $(To-IosHex8 $c.surfaceHeader 'd8')
+        primaryText: $iosTxtPri
+        linkHighlight: $(To-IosHex8 $c.cyan '33')
+        scam: $iosRed
+        dateFillStatic: $(To-IosHex8 $c.surfaceHeader 'cc')
+        dateFillFloat: $(To-IosHex8 $c.surfaceElevated '88')
+      withCustomWp:
+        bg: $(To-IosHex8 $c.surfaceHeader 'd8')
+        primaryText: $iosTxtPri
+        linkHighlight: $(To-IosHex8 $c.cyan '33')
+        scam: $iosRed
+        dateFillStatic: $(To-IosHex8 $c.surfaceHeader 'cc')
+        dateFillFloat: $(To-IosHex8 $c.surfaceElevated '88')
+    unreadBarBg: $iosElev
+    unreadBarStroke: $iosViolet
+    unreadBarText: $iosCyan
+    dateText:
+      withWp: $iosTxtPri
+      withoutWp: $iosTxtPri
+  inputPanel:
+    panelBg: $(To-IosHex8 $c.surfaceHeader 'eb')
+    panelBgNoWallpaper: $iosHdr
+    panelSeparator: $iosBrdStrong
+    panelControlAccent: $iosCyan
+    panelControl_v2: $iosTxtSec
+    panelControlDisabled: $iosTxtDis
+    panelControlDestructive: $iosRed
+    inputBg: $iosElev
+    inputStroke: $iosBrdStrong
+    inputPlaceholder_v2: $iosTxtMut
+    inputText_v2: $iosTxtPri
+    inputControl_v2: $iosTxtSec
+    actionControlBg: $iosMag
+    actionControlFg: $iosTxtBrt
+    primaryText: $iosTxtPri
+    secondaryText: $iosTxtSec
+    mediaRecordDot: $iosMag
+    mediaRecordControl:
+      button: $iosMag
+      micLevel: $(To-IosHex8 $c.cyan '3a')
+      activeIcon: $iosTxtBrt
+  inputMediaPanel:
+    panelSeparator: $iosBrd
+    panelIcon: $iosTxtMut
+    panelHighlightedIconBg: $(To-IosHex8 $c.cyan '2a')
+    panelHighlightedIcon: $iosCyan
+    panelContentVibrantOverlay: $iosTxtSec
+    panelContentControlVibrantOverlay: $(To-IosHex8 $c.textSecondary '4d')
+    panelContentControlVibrantSelection: $(To-IosHex8 $c.cyan '22')
+    panelContentControlOpaqueOverlay: $(To-IosHex8 $c.textSecondary '26')
+    panelContentControlOpaqueSelection: $(To-IosHex8 $c.cyan '22')
+    panelContentVibrantSearchOverlay: $iosTxtSec
+    panelContentVibrantSearchOverlaySelected: $iosCyan
+    panelContentVibrantSearchOverlayHighlight: $(To-IosHex8 $c.cyan '22')
+    panelContentOpaqueSearchOverlay: $iosTxtSec
+    panelContentOpaqueSearchOverlaySelected: $iosCyan
+    panelContentOpaqueSearchOverlayHighlight: $(To-IosHex8 $c.cyan '22')
+    stickersBg: $iosSurf
+    stickersSectionText: $iosCyanSoft
+    stickersSearchBg: $iosElev
+    stickersSearchPlaceholder: $iosTxtMut
+    stickersSearchPrimary: $iosTxtPri
+    stickersSearchControl: $iosCyanSoft
+    gifsBg: $iosSurf
+    bg: $(To-IosHex8 $c.surfaceBg 'e0')
+  inputButtonPanel:
+    panelBg: $iosSurf
+    panelSeparator: $iosBrd
+    buttonBg: $iosElev
+    buttonHighlight: $(To-IosHex8 $c.cyan '33')
+    buttonStroke: $iosBrdStrong
+    buttonHighlightedBg: $iosHover
+    buttonHighlightedStroke: $iosCyan
+    buttonText: $iosTxtPri
+  historyNav:
+    bg: $(To-IosHex8 $c.surfaceElevated 'eb')
+    stroke: $iosViolet
+    fg: $iosCyan
+    badgeBg: $iosMag
+    badgeStroke: $iosMag
+    badgeText: $iosTxtBrt
+actionSheet:
+  dim: $(To-IosHex8 $c.voidBg '99')
+  bgType: dark
+  opaqueItemBg: $iosSurf
+  itemBg: $(To-IosHex8 $c.surfaceBg 'e6')
+  opaqueItemHighlightedBg: $iosHover
+  itemHighlightedBg: $(To-IosHex8 $c.surfaceHover 'cc')
+  opaqueItemSeparator: $iosBrd
+  standardActionText: $iosCyan
+  destructiveActionText: $iosRed
+  disabledActionText: $iosTxtDis
+  primaryText: $iosTxtPri
+  secondaryText: $iosTxtSec
+  controlAccent: $iosCyan
+  inputBg: $iosElev
+  inputHollowBg: $iosElev
+  inputBorder: $iosBrdStrong
+  inputPlaceholder: $iosTxtMut
+  inputText: $iosTxtPri
+  inputClearButton: $iosMagSoft
+  checkContent: $iosTxtBrt
+contextMenu:
+  dim: $(To-IosHex8 $c.voidBg 'aa')
+  background: $(To-IosHex8 $c.surfaceElevated 'e8')
+  itemSeparator: $(To-IosHex8 $c.violet '33')
+  sectionSeparator: $(To-IosHex8 $c.voidBg '66')
+  itemBg: clear
+  itemHighlightedBg: $(To-IosHex8 $c.cyan '26')
+  primary: $iosTxtPri
+  secondary: $iosTxtSec
+  destructive: $iosRed
+  badgeFill: $iosMag
+  badgeForeground: $iosTxtBrt
+  badgeInactiveFill: $iosBrdStrong
+  badgeInactiveForeground: $iosTxtPri
+  extractedTint: $iosTxtPri
+notification:
+  bg: $iosElev
+  primaryText: $iosTxtPri
+  expanded:
+    bgType: dark
+    navBar:
+      background: $iosHdr
+      primaryText: $iosTxtPri
+      control: $iosCyan
+      separator: $iosBrdStrong
+chart:
+  labels: $(To-IosHex8 $c.textSecondary 'bb')
+  helperLines: $(To-IosHex8 $c.violet '44')
+  strongLines: $(To-IosHex8 $c.violet '77')
+  barStrongLines: $(To-IosHex8 $c.cyan '88')
+  detailsText: $iosTxtPri
+  detailsArrow: $iosCyan
+  detailsView: $iosElev
+  rangeViewFrame: $iosViolet
+  rangeViewMarker: $iosCyan
+"@
+
+$iosThemePath = Join-Path $RepoRoot 'ios\NeonHorizonSynthwave.tgios-theme'
+[System.IO.File]::WriteAllBytes($iosThemePath, $utf8NoBom.GetBytes(($iosTheme -replace "`r`n", "`n") + "`n"))
+
+# ==============================================================================
+# 4. VALIDATION CHECKS (Desktop ZIP + Android Theme.java + iOS PresentationThemeCoder)
 # ==============================================================================
 Write-Host 'Validating generated themes...'
 
@@ -1514,3 +2115,36 @@ if ($rawAnd[$wpOffset] -ne 0xFF -or $rawAnd[$wpOffset + 1] -ne 0xD8 -or $rawAnd[
 }
 Write-Host "  [OK] Android NeonHorizonSynthwave.attheme keys: $($parsedHeaderLines.Count), wallpaperFileOffset: $wpOffset, size: $($rawAnd.Length) bytes"
 Write-Host "  [OK] Android NeonHorizonSynthwave-no-bg.attheme keys: $($noBgLines.Count)"
+
+# Validate iOS .tgios-theme simulating Telegram-iOS PresentationThemeCoder.swift
+$iosRaw = [System.IO.File]::ReadAllText($iosThemePath, $utf8NoBom)
+if ($iosRaw.Contains("`r")) { throw 'iOS .tgios-theme contains CR (\r), must be LF (\n) only!' }
+if ($iosRaw.Contains("`t")) { throw 'iOS .tgios-theme contains TAB character, must use 2-space indent only!' }
+$iosLines = $iosRaw -split "`n"
+$iosKeyCount = 0
+$prevLevel = 0
+foreach ($il in $iosLines) {
+    $trimmed = $il.Trim()
+    if ([string]::IsNullOrEmpty($trimmed) -or $trimmed.StartsWith('#') -or $trimmed.StartsWith('//')) { continue }
+    $colonIdx = $il.IndexOf(':')
+    if ($colonIdx -lt 0) { throw "iOS .tgios-theme line missing colon: $il" }
+    $keyPart = $il.Substring(0, $colonIdx)
+    $spaces = 0
+    for ($si = 0; $si -lt $keyPart.Length; $si++) {
+        if ($keyPart[$si] -eq ' ') { $spaces++ } else { break }
+    }
+    if (($spaces % 2) -ne 0) { throw "iOS .tgios-theme odd indentation ($spaces spaces): $il" }
+    $level = $spaces / 2
+    if ($level -gt $prevLevel) { throw "iOS .tgios-theme unexpected indent jump: $il" }
+    $valPart = $il.Substring($colonIdx + 1).Trim()
+    if ([string]::IsNullOrEmpty($valPart)) {
+        $prevLevel = $level + 1
+    } else {
+        $prevLevel = $level
+        $iosKeyCount++
+    }
+}
+foreach ($reqTop in @('name:', 'basedOn:', 'dark:', 'intro:', 'passcode:', 'root:', 'list:', 'chatList:', 'chat:', 'actionSheet:', 'contextMenu:', 'notification:', 'chart:')) {
+    if ($iosRaw -notmatch "(?m)^$reqTop") { throw "iOS .tgios-theme missing top-level section: $reqTop" }
+}
+Write-Host "  [OK] iOS NeonHorizonSynthwave.tgios-theme leaf keys: $iosKeyCount, size: $((Get-Item $iosThemePath).Length) bytes"

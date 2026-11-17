@@ -6,12 +6,13 @@ on:
       - 'v*'
       - 'windows-v*'
       - 'android-v*'
+      - 'ios-v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g. v1.0.0, windows-v1.0.0, android-v1.0.0)'
+        description: 'Release tag (e.g. v1.0.2, windows-v1.0.2, android-v1.0.2, ios-v1.0.2)'
         required: true
-        default: 'v1.0.0'
+        default: 'v1.0.2'
       platforms:
         description: 'Platforms to package'
         type: choice
@@ -21,6 +22,7 @@ on:
           - All
           - Windows
           - Android
+          - iOS
 
 permissions:
   contents: write
@@ -55,6 +57,8 @@ jobs:
               platform = 'Windows'
           elif tag.lower().startswith('android-v'):
               platform = 'Android'
+          elif tag.lower().startswith('ios-v'):
+              platform = 'iOS'
           else:
               platform = 'All'
 
@@ -112,6 +116,8 @@ jobs:
               title = f'Neon Horizon Synthwave Telegram Theme v{ver} [Windows]'
           elif plat == 'Android':
               title = f'Neon Horizon Synthwave Telegram Theme v{ver} [Android]'
+          elif plat == 'iOS':
+              title = f'Neon Horizon Synthwave Telegram Theme v{ver} [iOS]'
           else:
               title = f'Neon Horizon Synthwave Telegram Theme v{ver}'
 
@@ -134,6 +140,13 @@ jobs:
                   f'- Полная тема со встроенным портретным фоном (`1080x2160`): `NeonHorizonSynthwave-android.attheme`.',
                   f'- Вариант с градиентным фоном без картинки: `NeonHorizonSynthwave-no-bg-android.attheme`.',
                   f'- Полный пакет с исходниками: `NeonHorizonSynthwave-v{ver}-android.zip` (SHA-256 в `checksums-android-sha256.txt`).',
+                  '',
+              ])
+          if plat in ('All', 'iOS'):
+              lines.extend([
+                  '### iPhone / iOS (Telegram)',
+                  '- Файл темы с нативным градиентом и неоновым `stroke` + `shadow` свечением баблов: `NeonHorizonSynthwave-ios.tgios-theme`.',
+                  f'- Полный пакет с портретными обоями `1290x2796` (`background_ios.jpg`): `NeonHorizonSynthwave-v{ver}-ios.zip` (SHA-256 в `checksums-ios-sha256.txt`).',
                   '',
               ])
 

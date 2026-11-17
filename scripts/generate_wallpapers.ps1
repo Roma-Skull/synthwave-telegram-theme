@@ -455,7 +455,7 @@ namespace SynthwaveTelegramAssets
                     g.DrawString("NEON HORIZON", fTitle, brWhite, 52, 28);
                     float w1 = g.MeasureString("NEON HORIZON", fTitle).Width;
                     g.DrawString("SYNTHWAVE TELEGRAM THEME", fTitle, brCyan, 52 + w1 + 14, 28);
-                    g.DrawString("Windows (Telegram Desktop .tdesktop-theme)  &  Android (Telegram .attheme)", fSub, brMuted, 54, 64);
+                    g.DrawString("Windows (.tdesktop-theme)  •  Android (.attheme)  •  iPhone / iOS (.tgios-theme)", fSub, brMuted, 54, 64);
 
                     // Top right pill
                     FillRounded(g, new SolidBrush(Color.FromArgb(27, 15, 56)), W - 260, 34, 206, 36, 18);
@@ -697,8 +697,8 @@ namespace SynthwaveTelegramAssets
                     using (var fTime = new Font("Segoe UI", 11f, FontStyle.Regular, GraphicsUnit.Pixel))
                     {
                         FillRounded(g, brIn, ax + 16, ay + 146, 300, 78, 16);
-                        g.DrawString("Neon Horizon .attheme with", fText, new SolidBrush(Color.FromArgb(242, 248, 255)), ax + 30, ay + 158);
-                        g.DrawString("embedded portrait wallpaper!", fText, new SolidBrush(Color.FromArgb(242, 248, 255)), ax + 30, ay + 180);
+                        g.DrawString("Neon Horizon for Android & iOS", fText, new SolidBrush(Color.FromArgb(242, 248, 255)), ax + 30, ay + 158);
+                        g.DrawString("with Outrun sunset & neon glow!", fText, new SolidBrush(Color.FromArgb(242, 248, 255)), ax + 30, ay + 180);
                         g.DrawString("20:41", fTime, new SolidBrush(Color.FromArgb(149, 130, 194)), ax + 266, ay + 202);
                     }
 
@@ -712,7 +712,7 @@ namespace SynthwaveTelegramAssets
                     {
                         FillRounded(g, brOut, ax + 78, ay + 244, aw - 94, 96, 16);
                         g.DrawString("Hot magenta + electric cyan", fText, new SolidBrush(Color.White), ax + 94, ay + 258);
-                        g.DrawString("ready for Android & Desktop.", fText, new SolidBrush(Color.White), ax + 94, ay + 280);
+                        g.DrawString("ready for Windows, Android & iOS.", fText, new SolidBrush(Color.White), ax + 94, ay + 280);
                         g.DrawString("20:42  ✓✓", fTime, new SolidBrush(Color.FromArgb(0, 240, 255)), ax + aw - 88, ay + 314);
                     }
 
@@ -740,6 +740,7 @@ Add-Type -TypeDefinition $csharpSource -ReferencedAssemblies System.Drawing
 
 $winBg = Join-Path $RepoRoot 'windows\background.jpg'
 $andBg = Join-Path $RepoRoot 'android\background_android.jpg'
+$iosBg = Join-Path $RepoRoot 'ios\background_ios.jpg'
 $previewPng = Join-Path $RepoRoot 'img\preview.png'
 
 Write-Host 'Generating Windows chat wallpaper (1920x1080)...'
@@ -748,7 +749,10 @@ Write-Host 'Generating Windows chat wallpaper (1920x1080)...'
 Write-Host 'Generating Android portrait chat wallpaper (1080x2160)...'
 [SynthwaveTelegramAssets.WallpaperGenerator]::BuildChatWallpaper($andBg, 1080, 2160, 880.0, 1080.0, 0.86, 1985, 88)
 
+Write-Host 'Generating iPhone / iOS portrait chat wallpaper (1290x2796)...'
+[SynthwaveTelegramAssets.WallpaperGenerator]::BuildChatWallpaper($iosBg, 1290, 2796, 1140.0, 1290.0, 0.86, 1986, 90)
+
 Write-Host 'Generating UI preview showcase (1600x960)...'
 [SynthwaveTelegramAssets.WallpaperGenerator]::BuildShowcasePreview($winBg, $andBg, $previewPng)
 
-Get-Item $winBg, $andBg, $previewPng | Format-Table Name, Length -AutoSize
+Get-Item $winBg, $andBg, $iosBg, $previewPng | Format-Table Name, Length -AutoSize
