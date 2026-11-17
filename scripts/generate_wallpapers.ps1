@@ -601,7 +601,9 @@ namespace SynthwaveTelegramAssets
                         g.DrawString("Today", fPill, new SolidBrush(Color.FromArgb(242, 248, 255)), chatX + chatW / 2 - 19, dy + 113);
                     }
 
-                    // Incoming bubble (#150D2B)
+                    // Incoming bubble (#150D2B) + 2px cyan neon underlight (msgInShadow)
+                    using (var brInSh = new SolidBrush(Color.FromArgb(170, 0, 240, 255)))
+                        FillRounded(g, brInSh, chatX + 24, dy + 156, 410, 92, 12);
                     using (var brIn = new SolidBrush(Color.FromArgb(238, 21, 13, 43)))
                     using (var fSender = new Font("Segoe UI", 12.5f, FontStyle.Bold, GraphicsUnit.Pixel))
                     using (var fText = new Font("Segoe UI", 13.5f, FontStyle.Regular, GraphicsUnit.Pixel))
@@ -614,7 +616,9 @@ namespace SynthwaveTelegramAssets
                         g.DrawString("20:40", fTime, new SolidBrush(Color.FromArgb(149, 130, 194)), chatX + 388, dy + 225);
                     }
 
-                    // Outgoing bubble (#2A124A -> #3A1766) with reply bar
+                    // Outgoing bubble (#2A124A -> #3A1766) with reply bar + 2px magenta neon underlight (msgOutShadow)
+                    using (var brOutSh = new SolidBrush(Color.FromArgb(184, 255, 42, 133)))
+                        FillRounded(g, brOutSh, chatX + chatW - 440, dy + 268, 416, 118, 12);
                     using (var brOut = new LinearGradientBrush(
                         new PointF(chatX + chatW - 440, dy + 266),
                         new PointF(chatX + chatW - 24, dy + 384),
@@ -633,9 +637,17 @@ namespace SynthwaveTelegramAssets
                         g.DrawString("20:42  ✓✓", fTime, new SolidBrush(Color.FromArgb(0, 240, 255)), bx + 344, by + 98);
                     }
 
-                    // Compose bar (#140B29)
+                    // Compose bar (#140B29) & 1px neon-violet panel dividers (shadowFg / titleShadow)
                     using (var brComp = new SolidBrush(Color.FromArgb(20, 11, 41)))
                         g.FillRectangle(brComp, chatX, dy + dh - composeH, chatW, composeH);
+                    using (var penDiv = new Pen(Color.FromArgb(120, 157, 61, 245), 1f))
+                    {
+                        g.DrawLine(penDiv, dx, dy + 34, dx + dw, dy + 34);
+                        g.DrawLine(penDiv, listX, dy + 34, listX, dy + dh);
+                        g.DrawLine(penDiv, chatX, dy + 34, chatX, dy + dh);
+                        g.DrawLine(penDiv, chatX, dy + 34 + chatTopH, chatX + chatW, dy + 34 + chatTopH);
+                        g.DrawLine(penDiv, chatX, dy + dh - composeH, chatX + chatW, dy + dh - composeH);
+                    }
                     using (var fComp = new Font("Segoe UI", 14f, FontStyle.Regular, GraphicsUnit.Pixel))
                         g.DrawString("Write a message...", fComp, new SolidBrush(Color.FromArgb(131, 112, 173)), chatX + 54, dy + dh - 37);
                     g.FillEllipse(new SolidBrush(Color.FromArgb(0, 240, 255)), chatX + chatW - 44, dy + dh - 44, 32, 32);

@@ -195,7 +195,7 @@ windowFgActive: $(To-LowerHex6 $c.textBright); // text on active areas
 windowActiveTextFg: $(To-LowerHex6 $c.cyan); // online / active accent text
 windowShadowFg: #04010c; // shadow base
 windowShadowFgFallback: $(To-LowerHex6 $c.voidBg); // shadow fallback
-shadowFg: #04010c88; // shadows with opacity
+shadowFg: #9d3df578; // 1px neon-violet panel dividers & shadows with opacity
 slideFadeOutBg: #06021255; // slide transition fade
 slideFadeOutShadowFg: windowShadowFg; // slide transition right shadow
 imageBg: $(To-LowerHex6 $c.voidBg); // image fallback
@@ -255,7 +255,7 @@ tooltipFg: $(To-LowerHex6 $c.textCyan); // tooltip text
 tooltipBorderFg: $(To-LowerHex6 $c.violet); // tooltip border
 
 // --- Window Title Bar (Windows / macOS) ---
-titleShadow: #2d185666; // subtle bottom border under title bar
+titleShadow: #b537f278; // 1px neon-violet line under custom window title
 titleBg: $(To-LowerHex6 $c.voidBg); // inactive window title bar
 titleBgActive: $(To-LowerHex6 $c.surfaceHeader); // active window title bar
 titleButtonBg: titleBg; // caption button inactive
@@ -466,10 +466,10 @@ msgInServiceFg: $(To-LowerHex6 $c.cyanSoft); // incoming forward header
 msgInServiceFgSelected: #ffffff;
 msgOutServiceFg: $(To-LowerHex6 $c.magentaSoft); // outgoing forward header
 msgOutServiceFgSelected: #ffffff;
-msgInShadow: #04010c55; // subtle incoming bubble shadow
-msgInShadowSelected: #00f0ff22;
-msgOutShadow: #04010c55; // subtle outgoing bubble shadow
-msgOutShadowSelected: #ff2a8533;
+msgInShadow: #00f0ffaa; // electric cyan 1-2px neon underlight below incoming bubbles
+msgInShadowSelected: #00f0ffeb;
+msgOutShadow: #ff2a85b8; // hot magenta 1-2px neon underlight below outgoing bubbles
+msgOutShadowSelected: #ff2a85f0;
 msgInDateFg: $(To-LowerHex6 $c.msgInDate); // incoming timestamp
 msgInDateFgSelected: #ffffff;
 msgOutDateFg: $(To-LowerHex6 $c.msgOutDate); // outgoing timestamp
@@ -807,7 +807,7 @@ $overrides = [ordered]@{
     text_RedBold = $red
     fill_RedNormal = $red
     fill_RedDark = '#ff8f1d3d'
-    divider = '#ff1c1038'
+    divider = '#ff381c6e'
     graySection = $surf
     key_graySectionText = $cyanSoft
     emptyListPlaceholder = $txtMut
@@ -980,7 +980,7 @@ $overrides = [ordered]@{
     chat_inBubble = $inBub
     chat_inBubbleSelected = $inBubSel
     chat_inBubbleSelectedOverlay = '#2400f0ff'
-    chat_inBubbleShadow = '#4804010c'
+    chat_inBubbleShadow = '#7700f0ff'
     chat_outBubble = $outBub
     chat_outBubbleGradient = $outGrad1
     chat_outBubbleGradient2 = $outGrad2
@@ -989,7 +989,7 @@ $overrides = [ordered]@{
     chat_outBubbleSelected = $outBubSel
     chat_outBubbleSelectedOverlay = '#24ff2a85'
     chat_outBubbleGradientSelectedOverlay = '#22ffffff'
-    chat_outBubbleShadow = '#4804010c'
+    chat_outBubbleShadow = '#85ff2a85'
     chat_inBubbleLocationPlaceholder = '#2a2d1856'
     chat_outBubbleLocationPlaceholder = '#2a4a228a'
 

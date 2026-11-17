@@ -9,7 +9,7 @@
 ## Платформы и файлы
 
 - **Windows — Telegram Desktop ([`windows/`](windows/)):**
-  - [`windows/NeonHorizonSynthwave.tdesktop-theme`](windows/NeonHorizonSynthwave.tdesktop-theme) — готовый пакет темы (включает все 467 цветовых ключей из [`colors.tdesktop-theme`](windows/colors.tdesktop-theme) и широкоформатные обои [`background.jpg`](windows/background.jpg) `1920x1080`).
+  - [`windows/NeonHorizonSynthwave.tdesktop-theme`](windows/NeonHorizonSynthwave.tdesktop-theme) — готовый пакет темы (все 467 цветовых ключей из [`colors.tdesktop-theme`](windows/colors.tdesktop-theme), 1–2 px неоновая подсветка нижней грани баблов, 1 px фиолетовые разделители панелей и широкоформатные обои [`background.jpg`](windows/background.jpg) `1920x1080`).
 - **Android — официальный клиент Telegram ([`android/`](android/)):**
   - [`android/NeonHorizonSynthwave.attheme`](android/NeonHorizonSynthwave.attheme) — полная тема (`775+` ключей интерфейса, градиентные исходящие пузыри, кольца Stories, подсветка кода, таблицы, панель стикеров/реакций) со встроенным портретным фоном `1080x2160` (`WPS`/`WPE`).
   - [`android/NeonHorizonSynthwave-no-bg.attheme`](android/NeonHorizonSynthwave-no-bg.attheme) — облегчённый вариант с 4-цветным синтвейв-градиентом чата вместо растрового фона.
@@ -58,7 +58,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\generate_wallpapers.
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build_themes.ps1
 
 # 3. Упаковать релизные архивы и SHA-256 контрольные суммы в dist/
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\package.ps1 -Version 1.0.0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\package.ps1 -Version 1.0.1
 ```
 
 ### Структура проекта

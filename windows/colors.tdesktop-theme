@@ -18,7 +18,7 @@ windowFgActive: #ffffff; // text on active areas
 windowActiveTextFg: #00f0ff; // online / active accent text
 windowShadowFg: #04010c; // shadow base
 windowShadowFgFallback: #080513; // shadow fallback
-shadowFg: #04010c88; // shadows with opacity
+shadowFg: #9d3df578; // 1px neon-violet panel dividers & shadows with opacity
 slideFadeOutBg: #06021255; // slide transition fade
 slideFadeOutShadowFg: windowShadowFg; // slide transition right shadow
 imageBg: #080513; // image fallback
@@ -78,7 +78,7 @@ tooltipFg: #e0f6ff; // tooltip text
 tooltipBorderFg: #b537f2; // tooltip border
 
 // --- Window Title Bar (Windows / macOS) ---
-titleShadow: #2d185666; // subtle bottom border under title bar
+titleShadow: #b537f278; // 1px neon-violet line under custom window title
 titleBg: #080513; // inactive window title bar
 titleBgActive: #120a26; // active window title bar
 titleButtonBg: titleBg; // caption button inactive
@@ -289,10 +289,10 @@ msgInServiceFg: #48ecff; // incoming forward header
 msgInServiceFgSelected: #ffffff;
 msgOutServiceFg: #ff5ca3; // outgoing forward header
 msgOutServiceFgSelected: #ffffff;
-msgInShadow: #04010c55; // subtle incoming bubble shadow
-msgInShadowSelected: #00f0ff22;
-msgOutShadow: #04010c55; // subtle outgoing bubble shadow
-msgOutShadowSelected: #ff2a8533;
+msgInShadow: #00f0ffaa; // electric cyan 1-2px neon underlight below incoming bubbles
+msgInShadowSelected: #00f0ffeb;
+msgOutShadow: #ff2a85b8; // hot magenta 1-2px neon underlight below outgoing bubbles
+msgOutShadowSelected: #ff2a85f0;
 msgInDateFg: #9582c2; // incoming timestamp
 msgInDateFgSelected: #ffffff;
 msgOutDateFg: #c8a6f5; // outgoing timestamp
